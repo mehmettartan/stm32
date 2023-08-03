@@ -1,0 +1,66 @@
+#include "adxl345.h"
+
+#define MULTI_BYTE_EN   0x40
+#define READ_OPERATION  0x80
+
+void adxl_read(uint8_t address, uint8_t* rxdata)
+{
+	uint8_t data[2];
+
+	/* Set read operation  */
+	address |= READ_OPERATION;
+
+	/*Enable multi-byte */
+	address |= MULTI_BYTE_EN;
+
+	/*Pull cs line low to enable slave	 */
+	cs_enable();
+
+	/*Send address */
+	spi1_transmit(&address, 1);
+
+	/*Read 6 byte */
+	spi1_receive(rxdata, 6);
+
+	/* Pull cs line high to disable slave */
+	cs_disable();
+
+}
+
+void adxl_write(uint8_t address, char value)
+{
+	uint8_t data[2];
+
+	/*Enable multi-byte */
+	data[0] = address | MULTI_BYTE_EN;
+
+	/*Place data into buffer */
+	data[1] = value;
+
+	/*Pull cs line low to enable slave	 */
+	cs_enable();
+
+	/* Transmit data and address */
+	spi1_transmit(data, 2);
+
+	/* Pull cs line high to disable slave */
+	cs_disable();
+}
+
+void adxl_init(void)
+{
+	/*Enable SPI gpio */
+	SPI_Gpio_init();
+
+	/*Config SPI */
+	Spi_config();
+
+	/*Set data format range to +-4g*/
+	adxl_write(DATA_FORMAT_R, FOUR_G);
+
+	/*Reset all bits*/
+	adxl_write(POWER_CTL_R, RESET);
+
+	/*Configure power control measure bit*/
+	adxl_write(POWER_CTL_R, SET_MEASURE_B);
+}
